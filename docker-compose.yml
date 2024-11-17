@@ -1,0 +1,61 @@
+version: '3.8'
+
+networks:
+    backend:
+
+services:
+  customerdb:
+    container_name: customer-db
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+        - ACCEPT_EULA=Y
+        - SA_PASSWORD=Abcde12345
+    networks:
+        - backend
+    ports:
+        - 8001:1433
+  customerapi:
+    container_name: customer-api
+    image: ${DOCKER_REGISTRY-}customerapi
+    build:
+      context: .
+      dockerfile: CustomerAPI/Dockerfile
+    networks:
+        - backend
+    environment:
+        - DB_HOST=customerdb
+        - DB_NAME=dms_customer
+        - DB_SA_PASSWORD=Abcde12345
+
+  productdb:
+    container_name: product-db
+    image: mysql:8.0.34-oracle
+    environment:
+        - MYSQL_ROOT_PASSWORD=root
+    networks:
+        - backend
+    ports:
+        - 8002:3306
+  productapi:
+    container_name: product-api
+    image: ${DOCKER_REGISTRY-}productapi
+    build:
+      context: .
+      dockerfile: ProductAPI/Dockerfile
+    networks:
+        - backend
+    environment:
+        - DB_HOST=productdb
+        - DB_NAME=dms_product
+        - DB_ROOT_PASSWORD=root
+
+  gateway:
+    container_name: api-gateway
+    image: ${DOCKER_REGISTRY-}gateway
+    build:
+      context: .
+      dockerfile: Gateway/Dockerfile
+    ports:
+        - 8010:80
+    networks:
+        - backend
